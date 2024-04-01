@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-type CategoryID string
-
 // HealthCheckState will contain any setup needed
 // by the cherkers and any information needed to be passed to other checks
 type HealthCheckState struct {
@@ -71,18 +69,6 @@ type CheckObserver func(*CheckResult)
 // Runner is implemented by any health-checkers that can be triggered with RunChecks()
 type Runner interface {
 	RunChecks(observer CheckObserver) (bool, bool)
-}
-
-// HealthCheckCategory contains a suite of healthchecks
-type Category struct {
-	Name        string
-	ID          CategoryID
-	Enabled     bool
-	Checkers    []*Checker
-	HintBaseURL string
-
-	// Must be set
-	Context context.Context
 }
 
 type HealthCheckConfig struct {
@@ -193,22 +179,4 @@ func (hc *HealthChecker) runCheck(category *Category, c *Checker, observer Check
 		observer(checkResult)
 		return checkResult.Err == nil
 	}
-}
-
-// NewCategory returns an instance of Category with the specified data
-func NewCategoryDefaultCategory(id CategoryID, checkers []*Checker, enabled bool, hintBaseURL string) *Category {
-	return &Category{
-		ID:          id,
-		Checkers:    checkers,
-		Enabled:     enabled,
-		HintBaseURL: hintBaseURL,
-		Context:     context.Background(),
-	}
-}
-
-func (c *Category) WithContext(ctx context.Context) *Category {
-	if c != nil {
-		c.Context = ctx
-	}
-	return c
 }

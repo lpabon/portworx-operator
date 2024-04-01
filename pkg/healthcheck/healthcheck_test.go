@@ -56,7 +56,7 @@ func TestSingleChecker(t *testing.T) {
 		},
 	}
 
-	cat := NewCategoryDefaultCategory("test", checkers, true, "http://test.com/")
+	cat := NewCategory("test", checkers, true, "http://test.com/")
 	assert.NotNil(t, cat)
 	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
 	assert.NotNil(t, hc)
@@ -113,7 +113,7 @@ func TestPassingDataFromCheckToCheck(t *testing.T) {
 		},
 	}
 
-	cat := NewCategoryDefaultCategory("test", checkers, true, "http://test.com/")
+	cat := NewCategory("test", checkers, true, "http://test.com/")
 	assert.NotNil(t, cat)
 	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
 	assert.NotNil(t, hc)
