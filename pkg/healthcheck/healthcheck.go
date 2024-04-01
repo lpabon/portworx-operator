@@ -80,6 +80,9 @@ type Category struct {
 	Enabled     bool
 	Checkers    []*Checker
 	HintBaseURL string
+
+	// Must be set
+	Context context.Context
 }
 
 type HealthCheckConfig struct {
@@ -98,6 +101,10 @@ var (
 
 // NewHealthCheck
 func NewHealthChecker(categories []*Category, config *HealthCheckConfig) *HealthChecker {
+	if config == nil {
+		return nil
+	}
+
 	return &HealthChecker{
 		Categories: categories,
 		Config:     *config,
@@ -149,7 +156,7 @@ func (hc *HealthChecker) RunChecks(observer CheckObserver) (bool, bool) {
 
 func (hc *HealthChecker) runCheck(category *Category, c *Checker, observer CheckObserver) bool {
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeOut)
+		ctx, cancel := context.WithTimeout(category.Context, DefaultTimeOut)
 		err := c.Check(ctx, hc.state)
 		cancel()
 		var se SkipError
@@ -189,11 +196,19 @@ func (hc *HealthChecker) runCheck(category *Category, c *Checker, observer Check
 }
 
 // NewCategory returns an instance of Category with the specified data
-func NewCategory(id CategoryID, checkers []*Checker, enabled bool, hintBaseURL string) *Category {
+func NewCategoryDefaultCategory(id CategoryID, checkers []*Checker, enabled bool, hintBaseURL string) *Category {
 	return &Category{
 		ID:          id,
 		Checkers:    checkers,
 		Enabled:     enabled,
 		HintBaseURL: hintBaseURL,
+		Context:     context.Background(),
 	}
+}
+
+func (c *Category) WithContext(ctx context.Context) *Category {
+	if c != nil {
+		c.Context = ctx
+	}
+	return c
 }
