@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -138,4 +139,131 @@ func TestPassingDataFromCheckToCheck(t *testing.T) {
 	assert.Equal(t, result.HintURL, "http://test.com/check234")
 	assert.False(t, result.Retry)
 	assert.False(t, result.Warning)
+}
+
+func TestHealthCheckerWarning(t *testing.T) {
+
+	called := false
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return fmt.Errorf("ERROR")
+			},
+			Warning: true,
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				called = true
+				return nil
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	assert.Len(t, tr.results, 2)
+	assert.True(t, called)
+}
+
+func TestHealthCheckerFatal(t *testing.T) {
+
+	called := false
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return fmt.Errorf("ERROR")
+			},
+			Fatal: true,
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				called = true
+				return nil
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	assert.Len(t, tr.results, 1)
+	assert.False(t, called)
+}
+
+func TestHealthCheckerRetry(t *testing.T) {
+
+	// Set the retry window to a quick value for the unit tests
+	saveDefaultRetryWindow := DefaultRetryWindow
+	DefaultRetryWindow = time.Millisecond
+	defer func() {
+		DefaultRetryWindow = saveDefaultRetryWindow
+	}()
+
+	retryDeadline := time.Now().Add(time.Millisecond * 100)
+	counter := 0
+
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				counter++
+				return fmt.Errorf("ERROR")
+			},
+			RetryDeadline: retryDeadline,
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return nil
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	assert.Len(t, tr.results, counter+1)
+
+	// picked 5 out of the air. Really all we want is a few times to retry
+	// but it all depends on the scheduler. So on a non-busy system, it should
+	// be rescheduled RetryDeadline / DefaultRetryWindo times
+	assert.GreaterOrEqual(t, counter, 5)
+
+	// Confirm that the last retry has failed
+	assert.Error(t, tr.results[counter-1].Err)
+
+	// Confirm that the last check worked
+	assert.NoError(t, tr.results[counter].Err)
 }
