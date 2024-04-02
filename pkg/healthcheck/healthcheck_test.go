@@ -267,3 +267,99 @@ func TestHealthCheckerRetry(t *testing.T) {
 	// Confirm that the last check worked
 	assert.NoError(t, tr.results[counter].Err)
 }
+
+func TestHealthCheckerSkip(t *testing.T) {
+
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return SkipError{
+					Reason: "Skip Test",
+				}
+			},
+
+			// Make it fatal, but it will not stop since it should be skipped
+			Fatal: true,
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return nil
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	// Only has 1 becase it skipped the first one.
+	assert.Len(t, tr.results, 1)
+
+	// Assert that the only result is the non-skipped check
+	result := tr.results[0]
+	assert.Equal(t, result.Category, CategoryID("test"))
+	assert.Equal(t, result.Description, "Checker 234")
+	assert.Equal(t, result.HintURL, "http://test.com/check234")
+}
+
+func TestHealthCheckerVerboseSuccess(t *testing.T) {
+
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return VerboseSuccess{
+					Message: "Hello",
+				}
+			},
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return fmt.Errorf("ERROR")
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	assert.Len(t, tr.results, 2)
+
+	result := tr.results[0]
+	assert.Equal(t, result.Category, CategoryID("test"))
+	assert.Equal(t, result.Description, "Checker 123\nHello")
+	assert.Equal(t, result.HintURL, "http://test.com/check123")
+	assert.False(t, result.Retry)
+	assert.False(t, result.Warning)
+	assert.NoError(t, result.Err)
+
+	result = tr.results[1]
+	assert.Equal(t, result.Category, CategoryID("test"))
+	assert.Equal(t, result.Description, "Checker 234")
+	assert.Equal(t, result.HintURL, "http://test.com/check234")
+	assert.False(t, result.Retry)
+	assert.False(t, result.Warning)
+	assert.Error(t, result.Err)
+	assert.ErrorAs(t, result.Err, &CategoryError{})
+
+}
