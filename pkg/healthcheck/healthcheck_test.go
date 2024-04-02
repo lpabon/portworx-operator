@@ -42,6 +42,62 @@ func TestNewHealthChecker(t *testing.T) {
 	assert.NotNil(t, hc)
 }
 
+func TestHealthCheckCategories(t *testing.T) {
+
+	// Set up
+	checkone := []*Checker{
+		&Checker{
+			Description: "Checker 1",
+			HintAnchor:  "check1",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return nil
+			},
+		},
+	}
+
+	checktwo := []*Checker{
+		&Checker{
+			Description: "Checker 2",
+			HintAnchor:  "check2",
+			Check: func(ctx context.Context, state HealthCheckState) error {
+				return nil
+			},
+		},
+	}
+
+	cat1 := NewCategory("cat1", checkone, true, "http://test.com/")
+	assert.NotNil(t, cat1)
+	cat2 := NewCategory("cat2", checktwo, true, "http://test.com/")
+	assert.NotNil(t, cat2)
+
+	hc := NewHealthChecker([]*Category{cat1}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+	hc.AppendCategories(cat2)
+
+	cats := hc.GetCategories()
+	assert.Len(t, cats, 2)
+
+	tr := newTestResults(t)
+	hc.RunChecks(tr.result)
+
+	assert.Len(t, tr.results, 2)
+	result := tr.results[0]
+	assert.Equal(t, result.Category, CategoryID("cat1"))
+	assert.Equal(t, result.Description, "Checker 1")
+	assert.Equal(t, result.HintURL, "http://test.com/check1")
+	assert.False(t, result.Retry)
+	assert.False(t, result.Warning)
+	assert.NoError(t, result.Err)
+
+	result = tr.results[1]
+	assert.Equal(t, result.Category, CategoryID("cat2"))
+	assert.Equal(t, result.Description, "Checker 2")
+	assert.Equal(t, result.HintURL, "http://test.com/check2")
+	assert.False(t, result.Retry)
+	assert.False(t, result.Warning)
+	assert.NoError(t, result.Err)
+}
+
 func TestSingleChecker(t *testing.T) {
 
 	// Set up
