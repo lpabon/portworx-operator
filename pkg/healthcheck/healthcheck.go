@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+var (
+	ErrRetry = errors.New("waiting for check to complete")
+)
+
 // HealthCheckState will contain any setup needed
 // by the cherkers and any information needed to be passed to other checks
 type HealthCheckState struct {
@@ -168,7 +172,7 @@ func (hc *HealthChecker) runCheck(category *Category, c *Checker, observer Check
 			// Check if the error provided by the check should be provided
 			// to the observer. If not, override it with a generic waiting message
 			if !c.SurfaceErrorOnRetry {
-				checkResult.Err = errors.New("waiting for check to complete")
+				checkResult.Err = ErrRetry
 			}
 
 			observer(checkResult)
