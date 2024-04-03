@@ -146,14 +146,12 @@ func (cr *SimpleReporter) ToJSON() ([]byte, error) {
 
 func (cr *SimpleReporter) Print(w io.Writer) {
 
-	errorFound := false
 	printer := func(result *CheckResult) {
 		status := okStatus
 		if result.Warning {
 			status = warnStatus
 		}
 		if result.Err != nil {
-			errorFound = true
 			status = failStatus
 		}
 
@@ -174,12 +172,12 @@ func (cr *SimpleReporter) Print(w io.Writer) {
 
 	success, warning := cr.Replay(printer)
 
-	if success {
-		color.New(color.FgGreen, color.Bold).Fprintf(w, "Ok")
+	if !success {
+		color.New(color.FgRed, color.Bold).Fprintf(w, "Error")
 	} else if warning {
 		color.New(color.FgYellow, color.Bold).Fprintf(w, "Warning")
-	} else if errorFound {
-		color.New(color.FgRed, color.Bold).Fprintf(w, "Error")
+	} else {
+		color.New(color.FgGreen, color.Bold).Fprintf(w, "Ok")
 	}
 }
 
