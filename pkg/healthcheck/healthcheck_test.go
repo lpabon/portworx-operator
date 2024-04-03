@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -418,4 +419,68 @@ func TestHealthCheckerVerboseSuccess(t *testing.T) {
 	assert.Error(t, result.Err)
 	assert.ErrorAs(t, result.Err, &CategoryError{})
 
+}
+
+func TestHealthCheckerPrinter(t *testing.T) {
+
+	// Set up
+	checkers := []*Checker{
+		&Checker{
+			Description: "Checker 123",
+			HintAnchor:  "check123",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return VerboseSuccess{
+					Message: "Hello",
+				}
+			},
+		},
+		&Checker{
+			Description: "Checker 234",
+			HintAnchor:  "check234",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return fmt.Errorf("This is normally ok, but could be better")
+			},
+			Warning: true,
+		},
+		&Checker{
+			Description: "Checker 2",
+			HintAnchor:  "check2",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return fmt.Errorf("bad")
+			},
+		},
+		&Checker{
+			Description: "Checker 3",
+			HintAnchor:  "check3",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return nil
+			},
+		},
+		&Checker{
+			Description: "Checker 4",
+			HintAnchor:  "check4",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return nil
+			},
+			Warning: true,
+		},
+		&Checker{
+			Description: "Checker 23",
+			HintAnchor:  "check23",
+			Check: func(ctx context.Context, state *HealthCheckState) error {
+				return nil
+			},
+		},
+	}
+
+	cat := NewCategory("test", checkers, true, "http://test.com/")
+	assert.NotNil(t, cat)
+	hc := NewHealthChecker([]*Category{cat}, &HealthCheckConfig{})
+	assert.NotNil(t, hc)
+
+	// Test
+	reporter := hc.Run()
+	reporter.Print(os.Stdout)
+	b, _ := reporter.ToJSON()
+	fmt.Printf("%s\n", string(b))
 }

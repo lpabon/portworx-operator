@@ -95,11 +95,12 @@ func (cr *SimpleReporter) ToJSON() ([]byte, error) {
 		if !result.Retry {
 			currentCategory := categories[len(categories)-1]
 			// ignore checks that are going to be retried, we want only final results
-			status := CheckSuccess
-			if result.Warning {
+			var status CheckResultStr
+			if !result.Warning && result.Err == nil {
+				status = CheckSuccess
+			} else if result.Warning && result.Err != nil {
 				status = CheckWarn
-			}
-			if result.Err != nil {
+			} else {
 				status = CheckErr
 			}
 
@@ -134,11 +135,11 @@ func (cr *SimpleReporter) Print(w io.Writer) {
 
 	printer := func(result *CheckResult) {
 		status := okStatus
-		if result.Warning {
-			status = warnStatus
-		}
 		if result.Err != nil {
 			status = failStatus
+			if result.Warning {
+				status = warnStatus
+			}
 		}
 
 		fmt.Fprintf(w, "[%s] %s/%s\n",
@@ -147,10 +148,12 @@ func (cr *SimpleReporter) Print(w io.Writer) {
 			result.Description)
 
 		if result.Err != nil {
-			color.New(color.FgRed).Fprintf(w, "\tErr: %s\n", result.Err)
-		}
-		if result.HintURL != "" {
-			if result.Err != nil || result.Warning {
+			if result.Warning {
+				color.New(color.FgYellow).Fprintf(w, "\tWarning: %s\n", result.Err)
+			} else {
+				color.New(color.FgRed).Fprintf(w, "\tErr: %s\n", result.Err)
+			}
+			if result.HintURL != "" {
 				fmt.Fprintf(w, "\tSee: %s\n", result.HintURL)
 			}
 		}
@@ -158,12 +161,12 @@ func (cr *SimpleReporter) Print(w io.Writer) {
 
 	success, warning := cr.Replay(printer)
 
-	if !success {
-		color.New(color.FgRed, color.Bold).Fprintf(w, "\nError\n")
-	} else if warning {
+	if success && !warning {
+		color.New(color.FgGreen, color.Bold).Fprintf(w, "\nOk\n")
+	} else if success && warning {
 		color.New(color.FgYellow, color.Bold).Fprintf(w, "\nWarning\n")
 	} else {
-		color.New(color.FgGreen, color.Bold).Fprintf(w, "\nOk\n")
+		color.New(color.FgRed, color.Bold).Fprintf(w, "\nError\n")
 	}
 }
 
