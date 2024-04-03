@@ -164,10 +164,12 @@ func (hc *HealthChecker) runCheck(category *Category, c *Checker, observer Check
 
 		if checkResult.Err != nil && time.Now().Before(c.RetryDeadline) {
 			checkResult.Retry = true
+
+			// Check if the error provided by the check should be provided
+			// to the observer. If not, override it with a generic waiting message
 			if !c.SurfaceErrorOnRetry {
 				checkResult.Err = errors.New("waiting for check to complete")
 			}
-			//log.Debugf("Retrying on error: %s", err)
 
 			observer(checkResult)
 			time.Sleep(DefaultRetryWindow)
