@@ -1,9 +1,3 @@
-//
-// package healthcheck is based on the ideas and code
-// from the Linkerd HealthCheck under the Apache v2 Lic.
-// https://github.com/linkerd/linkerd2/tree/main/pkg/healthcheck
-//
-
 package healthcheck
 
 import (
@@ -52,8 +46,6 @@ type Checker struct {
 }
 
 // CheckResult encapsulates a check's identifying information and output
-// Note there exists an analogous user-facing type, `cmd.check`, for output via
-// `linkerd check -o json`.
 type CheckResult struct {
 	Category    CategoryID
 	Description string

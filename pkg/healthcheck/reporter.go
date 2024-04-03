@@ -32,17 +32,25 @@ type SimpleReporter struct {
 
 var _ Reporter = &SimpleReporter{}
 
+// Check is structure used for JSON output of a health check
+type Check struct {
+	Description string         `json:"description"`
+	Hint        string         `json:"hint,omitempty"`
+	Error       string         `json:"error,omitempty"`
+	Result      CheckResultStr `json:"result"`
+}
+
+// CheckCategory groups a series of checks for a category
+type CheckCategory struct {
+	Name   CategoryID `json:"categoryName"`
+	Checks []*Check   `json:"checks"`
+}
+
 // CheckOutput groups the check results for all categories
 type CheckOutput struct {
 	Success    bool             `json:"success"`
 	Warning    bool             `json:"warning"`
 	Categories []*CheckCategory `json:"categories"`
-}
-
-// CheckCategory groups a series of check for a category
-type CheckCategory struct {
-	Name   CategoryID `json:"categoryName"`
-	Checks []*Check   `json:"checks"`
 }
 
 // CheckResultStr is a string describing the result of a check
@@ -53,15 +61,6 @@ const (
 	CheckWarn    CheckResultStr = "warning"
 	CheckErr     CheckResultStr = "error"
 )
-
-// Check is a user-facing version of `healthcheck.CheckResult`, for output via
-// `linkerd check -o json`.
-type Check struct {
-	Description string         `json:"description"`
-	Hint        string         `json:"hint,omitempty"`
-	Error       string         `json:"error,omitempty"`
-	Result      CheckResultStr `json:"result"`
-}
 
 func NewSimpleReporter() *SimpleReporter {
 	return &SimpleReporter{
