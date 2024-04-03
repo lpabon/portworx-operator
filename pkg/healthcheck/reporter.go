@@ -4,28 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"regexp"
 
 	"github.com/fatih/color"
-)
-
-const (
-	// JSONOutput is used to specify the json output format
-	JSONOutput = "json"
-	// TableOutput is used to specify the table output format
-	TableOutput = "table"
-	// WideOutput is used to specify the wide output format
-	WideOutput = "wide"
-	// ShortOutput is used to specify the short output format
-	ShortOutput = "short"
 )
 
 var (
 	okStatus   = color.New(color.FgGreen, color.Bold).SprintFunc()("\u221A")  // √
 	warnStatus = color.New(color.FgYellow, color.Bold).SprintFunc()("\u203C") // ‼
 	failStatus = color.New(color.FgRed, color.Bold).SprintFunc()("\u00D7")    // ×
-
-	reStableVersion = regexp.MustCompile(`stable-(\d\.\d+)\.`)
 )
 
 type Reporter interface {
@@ -173,11 +159,11 @@ func (cr *SimpleReporter) Print(w io.Writer) {
 	success, warning := cr.Replay(printer)
 
 	if !success {
-		color.New(color.FgRed, color.Bold).Fprintf(w, "Error")
+		color.New(color.FgRed, color.Bold).Fprintf(w, "\nError\n")
 	} else if warning {
-		color.New(color.FgYellow, color.Bold).Fprintf(w, "Warning")
+		color.New(color.FgYellow, color.Bold).Fprintf(w, "\nWarning\n")
 	} else {
-		color.New(color.FgGreen, color.Bold).Fprintf(w, "Ok")
+		color.New(color.FgGreen, color.Bold).Fprintf(w, "\nOk\n")
 	}
 }
 
