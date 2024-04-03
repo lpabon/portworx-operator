@@ -48,7 +48,7 @@ type Checker struct {
 
 	// check is the function that's called to execute the check; if the function
 	// returns an error, the check fails
-	Check func(context.Context, HealthCheckState) error
+	Check func(context.Context, *HealthCheckState) error
 }
 
 // CheckResult encapsulates a check's identifying information and output
@@ -77,7 +77,7 @@ type HealthCheckConfig struct {
 type HealthChecker struct {
 	Categories []*Category
 	Config     HealthCheckConfig
-	state      HealthCheckState
+	state      *HealthCheckState
 }
 
 var (
@@ -94,7 +94,7 @@ func NewHealthChecker(categories []*Category, config *HealthCheckConfig) *Health
 	return &HealthChecker{
 		Categories: categories,
 		Config:     *config,
-		state: HealthCheckState{
+		state: &HealthCheckState{
 			Data: make(map[string]any),
 		},
 	}
@@ -109,6 +109,12 @@ func (hc *HealthChecker) AppendCategories(categories ...*Category) *HealthChecke
 // GetCategories returns all the categories
 func (hc *HealthChecker) GetCategories() []*Category {
 	return hc.Categories
+}
+
+func (hc *HealthChecker) Run() Reporter {
+	reporter := NewSimpleReporter()
+	reporter.success, reporter.warning = hc.RunChecks(reporter.Observer)
+	return reporter
 }
 
 // RunChecks runs all configured checkers, and passes the results of each

@@ -49,7 +49,7 @@ func TestHealthCheckCategories(t *testing.T) {
 		&Checker{
 			Description: "Checker 1",
 			HintAnchor:  "check1",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return nil
 			},
 		},
@@ -59,7 +59,7 @@ func TestHealthCheckCategories(t *testing.T) {
 		&Checker{
 			Description: "Checker 2",
 			HintAnchor:  "check2",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return nil
 			},
 		},
@@ -106,7 +106,7 @@ func TestSingleChecker(t *testing.T) {
 		&Checker{
 			Description: "Checker 1",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				called = true
 				return nil
 			},
@@ -149,7 +149,7 @@ func TestPassingDataFromCheckToCheck(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				state.Data["one"] = "two"
 				return nil
 			},
@@ -157,7 +157,7 @@ func TestPassingDataFromCheckToCheck(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				if val, ok := state.Data["one"].(string); !ok {
 					return fmt.Errorf("Not found or not a string")
 				} else {
@@ -205,7 +205,7 @@ func TestHealthCheckerWarning(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return fmt.Errorf("ERROR")
 			},
 			Warning: true,
@@ -213,7 +213,7 @@ func TestHealthCheckerWarning(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				called = true
 				return nil
 			},
@@ -241,7 +241,7 @@ func TestHealthCheckerFatal(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return fmt.Errorf("ERROR")
 			},
 			Fatal: true,
@@ -249,7 +249,7 @@ func TestHealthCheckerFatal(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				called = true
 				return nil
 			},
@@ -286,7 +286,7 @@ func TestHealthCheckerRetry(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				counter++
 				return fmt.Errorf("ERROR")
 			},
@@ -295,7 +295,7 @@ func TestHealthCheckerRetry(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return nil
 			},
 		},
@@ -331,7 +331,7 @@ func TestHealthCheckerSkip(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return SkipError{
 					Reason: "Skip Test",
 				}
@@ -343,7 +343,7 @@ func TestHealthCheckerSkip(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return nil
 			},
 		},
@@ -375,7 +375,7 @@ func TestHealthCheckerVerboseSuccess(t *testing.T) {
 		&Checker{
 			Description: "Checker 123",
 			HintAnchor:  "check123",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return VerboseSuccess{
 					Message: "Hello",
 				}
@@ -384,7 +384,7 @@ func TestHealthCheckerVerboseSuccess(t *testing.T) {
 		&Checker{
 			Description: "Checker 234",
 			HintAnchor:  "check234",
-			Check: func(ctx context.Context, state HealthCheckState) error {
+			Check: func(ctx context.Context, state *HealthCheckState) error {
 				return fmt.Errorf("ERROR")
 			},
 		},
